@@ -10,3 +10,6 @@ spec:
   envFrom:
     - secret: ds-figma-slack
     - secret: ds-figma-slack-token
+  port: 3000
+  ingresses:
+    - https://designsystemet-figma-slack-app.nav.no
