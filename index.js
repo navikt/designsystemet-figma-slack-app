@@ -5,14 +5,17 @@ const app = new App({
   signingSecret: process.env.SLACK_SIGNING_SECRET,
   customRoutes: [
     {
-      path: "/",
+      path: "/isalive",
       method: ["GET"],
       handler: (req, res) => {
-        app.client.chat.postMessage({
-          channel: "designsystemet-figma",
-          text: "Hello from docker!",
-        });
-        res.end("Hello from docker!");
+        res.end();
+      },
+    },
+    {
+      path: "/isready",
+      method: ["GET"],
+      handler: (req, res) => {
+        res.end();
       },
     },
   ],
