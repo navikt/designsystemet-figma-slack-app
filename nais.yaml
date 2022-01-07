@@ -13,3 +13,5 @@ spec:
   port: 3000
   ingresses:
     - https://designsystemet-figma-slack-app.ekstern.dev.nav.no
+  replicas:
+    max: 1
