@@ -81,6 +81,10 @@ const app = new App({
             }
             if (body.event_type === "LIBRARY_PUBLISH") {
               publishReqs.push(body);
+              console.log(
+                "LIBRARY_PUBLISH request:\n",
+                JSON.stringify(body, null, 2)
+              );
               timeoutID = setTimeout(() => {
                 if (publishReqs.length) {
                   let publishes = [];
