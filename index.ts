@@ -128,7 +128,7 @@ const getLibraryPublishMessage = async ({
 
   return {
     channel: "designsystemet-figma",
-    text: `Changes published to Figma library ${file_key}`,
+    text: `Changes published to Figma library ${file_name}`,
     blocks: [
       {
         type: "section",
@@ -198,7 +198,7 @@ const app = new App({
                         "modified_styles",
                         "deleted_styles",
                       ];
-                      keys.reduce((publish, key) => {
+                      publish = keys.reduce((publish, key) => {
                         publish[key] = Array.from<LibraryItemData>(
                           new Set([...publish[key], ...publishReq[key]])
                         );
