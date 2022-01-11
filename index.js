@@ -1,6 +1,6 @@
 const { App } = require("@slack/bolt");
 
-const libraryPublishMessage = async ({
+const getLibraryPublishMessage = async ({
   file_name,
   file_key,
   triggered_by: { handle },
