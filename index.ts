@@ -1,5 +1,34 @@
-const https = require("https");
-const { App } = require("@slack/bolt");
+import { request } from "https";
+import { App } from "@slack/bolt";
+import {
+  Block,
+  ChatPostMessageArguments,
+  ChatPostMessageResponse,
+  Method,
+} from "@slack/web-api";
+
+interface LibraryItemData {
+  name: string;
+  key: string;
+}
+
+interface Publish {
+  file_name: string;
+  file_key: string;
+  triggered_by: {
+    handle: string;
+  };
+  description: string;
+  created_components: LibraryItemData[];
+  modified_components: LibraryItemData[];
+  deleted_components: LibraryItemData[];
+  created_styles: LibraryItemData[];
+  modified_styles: LibraryItemData[];
+  deleted_styles: LibraryItemData[];
+  timestamp: string;
+  event_type: string;
+  passcode: string;
+}
 
 const getLibraryPublishMessage = async ({
   file_name,
@@ -12,14 +41,19 @@ const getLibraryPublishMessage = async ({
   created_styles,
   modified_styles,
   deleted_styles,
-}) => {
+}: Publish): Promise<ChatPostMessageArguments> => {
   const text = `Changes to Figma library <https://www.figma.com/file/${file_key}/Filename|${file_name}> published by ${handle}.`;
 
-  const cudSection = (heading, created, updated, deleted) => {
-    const list = (list, name) => {
-      const names = [
-        ...new Set(list.map(({ name }) => `${name}`).filter((n) => n)),
-      ];
+  const cudSection = (
+    heading: string,
+    created: LibraryItemData[],
+    updated: LibraryItemData[],
+    deleted: LibraryItemData[]
+  ) => {
+    const list = (list: LibraryItemData[], name: string) => {
+      const names = Array.from(
+        new Set<string>(list.map(({ name }) => `${name}`).filter((n) => n))
+      );
       return names.length ? `${name}: ${names.join(", ")}` : "";
     };
 
@@ -40,9 +74,9 @@ const getLibraryPublishMessage = async ({
     );
   };
 
-  const fetchComponent = async (key) =>
+  const fetchComponent = async (key: string) =>
     new Promise((resolve, reject) => {
-      const req = https.request(
+      const req = request(
         {
           hostname: "api.figma.com",
           path: `/v1/components/${key}`,
@@ -79,9 +113,10 @@ const getLibraryPublishMessage = async ({
         await Promise.all(
           components.map(async ({ name, key }) => {
             if (name.includes("=")) {
-              const comp = await fetchComponent(key);
+              const comp: any = await fetchComponent(key);
               return {
                 name: comp?.meta?.containing_frame?.name,
+                key,
               };
             } else {
               return { name, key };
@@ -104,13 +139,13 @@ const getLibraryPublishMessage = async ({
       },
       cudSection("Components", created, modified, deleted),
       cudSection("Styles", created_styles, modified_styles, deleted_styles),
-    ].filter((n) => n),
+    ].filter((n) => n) as Block[],
   };
 };
 
-let publishReqs = [];
-let timeoutID;
-let postedPublishes = [];
+let publishReqs: Publish[] = [];
+let timeoutID: NodeJS.Timeout;
+let postedPublishes: Publish[] = [];
 
 const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
@@ -128,7 +163,7 @@ const app = new App({
           req.on("end", () => {
             const body = JSON.parse(data);
             if (body.passcode !== process.env.FIGMA_WEBHOOK_PASSCODE) {
-              res.statusCode(401);
+              res.writeHead(401);
               res.end();
             }
             if (body.event_type === "LIBRARY_PUBLISH") {
@@ -139,7 +174,7 @@ const app = new App({
               );
               timeoutID = setTimeout(() => {
                 if (publishReqs.length) {
-                  let publishes = [];
+                  let publishes: Publish[] = [];
                   publishReqs.forEach((publishReq) => {
                     let publish = publishes.find(
                       (publish) =>
@@ -147,19 +182,28 @@ const app = new App({
                         publish.timestamp === publishReq.timestamp
                     );
                     if (publish) {
-                      [
+                      publish.created_components;
+                      const keys: Array<
+                        | "created_components"
+                        | "modified_components"
+                        | "deleted_components"
+                        | "created_styles"
+                        | "modified_styles"
+                        | "deleted_styles"
+                      > = [
                         "created_components",
                         "modified_components",
                         "deleted_components",
                         "created_styles",
                         "modified_styles",
                         "deleted_styles",
-                      ].forEach(
-                        (key) =>
-                          (publish[key] = [
-                            ...new Set([...publish[key], ...publishReq[key]]),
-                          ])
-                      );
+                      ];
+                      keys.reduce((publish, key) => {
+                        publish[key] = Array.from<LibraryItemData>(
+                          new Set([...publish[key], ...publishReq[key]])
+                        );
+                        return publish;
+                      }, publish);
                     } else {
                       publishes.push(publishReq);
                     }
@@ -209,7 +253,7 @@ const app = new App({
 });
 
 (async () => {
-  await app.start(process.env.PORT || 3000);
+  await app.start(Number(process.env.PORT) || 3000);
 
-  console.log("⚡️ Bolt app is running!");
+  console.log("Bolt app is running!");
 })();

@@ -2,13 +2,15 @@
   "name": "designsystemet-figma-slack-app",
   "version": "1.0.0",
   "description": "Slack app for designsystemet figma",
-  "main": "index.js",
+  "main": "index.ts",
   "scripts": {
-    "start": "node index.js"
+    "start": "ts-node index.ts"
   },
   "author": "Andreas Nordahl",
   "license": "ISC",
   "dependencies": {
-    "@slack/bolt": "^3.8.1"
+    "@slack/bolt": "^3.8.1",
+    "ts-node": "^10.4.0",
+    "typescript": "^4.5.4"
   }
 }
