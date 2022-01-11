@@ -16,10 +16,12 @@ const getLibraryPublishMessage = async ({
   const text = `Changes to Figma library <https://www.figma.com/file/${file_key}/Filename|${file_name}> published by ${handle}.`;
 
   const cudSection = (heading, created, updated, deleted) => {
-    const list = (list, name) =>
-      `${name}: ${[
+    const list = (list, name) => {
+      const names = [
         ...new Set(list.map(({ name }) => `${name}`).filter((n) => n)),
-      ].join(", ")}`;
+      ];
+      return names.length ? `${name}: ${names.join(", ")}` : "";
+    };
 
     return (
       [created, updated, deleted].some((l) => l.length) && {
