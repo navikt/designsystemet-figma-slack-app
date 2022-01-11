@@ -1,6 +1,6 @@
 const { App } = require("@slack/bolt");
 
-const libraryPublishMessage = ({
+const libraryPublishMessage = async ({
   file_name,
   file_key,
   triggered_by: { handle },
@@ -170,8 +170,9 @@ const app = new App({
                       )
                     ) {
                       postedPublishes.push(publish);
-                      app.client.chat.postMessage(
-                        libraryPublishMessage(publish)
+
+                      getLibraryPublishMessage(publish).then(
+                        app.client.chat.postMessage
                       );
                     }
                   });
