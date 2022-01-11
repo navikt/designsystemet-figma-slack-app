@@ -16,7 +16,9 @@ const libraryPublishMessage = ({
 
   const cudSection = (heading, created, updated, deleted) => {
     const list = (list, name) =>
-      list.length && `${name}: ${list.map(({ name }) => `${name}`).join(", ")}`;
+      `${name}: ${[
+        ...new Set(list.map(({ name }) => `${name}`).filter((n) => n)),
+      ].join(", ")}`;
 
     return (
       [created, updated, deleted].some((l) => l.length) && {
@@ -34,6 +36,58 @@ const libraryPublishMessage = ({
       }
     );
   };
+
+  const fetchComponent = async (key) =>
+    new Promise((resolve, reject) => {
+      const req = https.request(
+        {
+          hostname: "api.figma.com",
+          path: `/v1/components/${key}`,
+          method: "GET",
+          headers: {
+            "X-Figma-Token": process.env.FIGMA_TOKEN,
+          },
+        },
+        (res) => {
+          if (res.statusCode !== 200) {
+            reject();
+          }
+
+          let data = "";
+          res.on("data", (chunk) => {
+            data += chunk;
+          });
+          res.on("end", () => {
+            resolve(JSON.parse(data));
+          });
+        }
+      );
+
+      req.on("error", (error) => {
+        reject(error);
+      });
+
+      req.end();
+    });
+
+  const [created, modified, deleted] = await Promise.all(
+    [created_components, modified_components, deleted_components].map(
+      async (components) =>
+        await Promise.all(
+          components.map(async ({ name, key }) => {
+            if (name.includes("=")) {
+              const comp = await fetchComponent(key);
+              return {
+                name: comp?.meta?.containing_frame?.name,
+              };
+            } else {
+              return { name, key };
+            }
+          })
+        )
+    )
+  );
+
   return {
     channel: "designsystemet-figma",
     text: `Changes published to Figma library ${file_key}`,
@@ -45,12 +99,7 @@ const libraryPublishMessage = ({
           text: description ? `${text}\n>${description}` : text,
         },
       },
-      cudSection(
-        "Components",
-        created_components,
-        modified_components,
-        deleted_components
-      ),
+      cudSection("Components", created, modified, deleted),
       cudSection("Styles", created_styles, modified_styles, deleted_styles),
     ].filter((n) => n),
   };

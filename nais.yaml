@@ -11,6 +11,7 @@ spec:
     - secret: ds-figma-slack
     - secret: ds-figma-slack-token
     - secret: ds-figma-slack-passcode
+    - secret: ds-figma-token
   port: 3000
   ingresses:
     - https://designsystemet-figma-slack-app.ekstern.dev.nav.no
